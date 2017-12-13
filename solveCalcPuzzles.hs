@@ -20,7 +20,8 @@ data Operation = Noop
                | OpMod Operation
                deriving (Show, Eq)
 
-type Context = (Maybe Int, [Operation], [Operation])
+type Transformer = Int -> Int
+type GameState = (Maybe Int, [Operation], [Operation], Transformer)
 type Solution = [Operation]
 
 applyOp :: Operation -> Int -> Maybe Int
@@ -40,11 +41,13 @@ applyOp (Inv10)           c = Just (inv10 c)
 applyOp (Replace from to) c = Just (read (replace from to (show c)))
 applyOp (OpMod _)         c = Just c
 
-apply :: Operation -> Context -> Context
+apply :: Operation -> GameState -> GameState
 
-apply _ c@(Nothing, _, _) = c
-apply op@(OpMod f) (Just crt, applied, available) = (Just crt, op:applied, map (opMod f) available)
-apply op (Just crt, applied, available) = (applyOp op crt, op:applied, available)
+apply _ c@(Nothing, _, _, _) = c
+apply op@(OpMod f) (Just crt, applied, available, t) = (Just crt, op:applied, map (opMod f) available, t)
+apply op (Just crt, applied, available, t) = (newValTransformed, op:applied, available, t)
+  where newVal = applyOp op crt
+        newValTransformed = fmap t newVal
 
 opMod :: Operation -> Operation -> Operation
 opMod op (Plus n)    = Plus (fromMaybe 0 (applyOp op n))
@@ -94,6 +97,9 @@ replace a b l@(x:xs) | a `isPrefixOf` l = b ++ (replace a b $ drop (length a) l)
                      | otherwise        = x : replace a b xs
 
 
+noTransformer :: Int -> Int
+noTransformer = id
+
 wormhole :: Int -> Int -> Int -> Int
 wormhole from to x | from < l  = base + add
                    | otherwise = x
@@ -107,10 +113,10 @@ wormhole from to x | from < l  = base + add
 
 
 
-solve :: Int -> Int -> Context -> Maybe Solution
-solve _ _ c@(Nothing, _, _) = Nothing
-solve _ (-1) _                 = Nothing
-solve goal moves c@(Just crt, appliedOps, availableOps)
+solve :: Int -> Int -> GameState -> Maybe Solution
+solve _    _     c@(Nothing, _, _, _) = Nothing
+solve _    (-1)  _                    = Nothing
+solve goal moves c@(Just crt, appliedOps, availableOps, _)
         | goal == crt = Just appliedOps
         | otherwise   = fromMaybe Nothing $ find isJust solutions
         where solutions = [solve goal (moves -1) (apply op c)
@@ -134,7 +140,7 @@ solveGames = do
                                                             Replace "63" "33",
                                                             Replace "36" "93",
                                                             Replace "39" "33"
-                                                    ])
+                                                    ], noTransformer)
 
 tests = hspec $ do
   describe "Calculator solver" $ do
@@ -168,18 +174,23 @@ tests = hspec $ do
       it "can append digits" $ do
         append 13 100 `shouldBe` 10013
 
-      it "can replace" $
+      it "can replace" $ do
         replace "test" "xyz" "this test is a test" `shouldBe` "this xyz is a xyz"
 
-      it "can do opmods" $
+      it "can do opmods" $ do
         opMod (Plus 2) (Append 2) `shouldBe` (Append 4)
         opMod (Plus 2) (Plus 5) `shouldBe` (Plus 7)
 
-      it "can apply opmods on existing ops" $
-        let (value, done, available) = apply (OpMod (Plus 2)) (Just 1, [], [Append 2])
-        value     `shouldBe` Just 1
-        done      `shouldBe` [OpMod (Plus 2)]
+      it "can apply opmods on existing ops" $ do
+        let (value, done, available, _) = apply (OpMod (Plus 2)) (Just 1, [], [Append 2], noTransformer)
+        value `shouldBe` Just 1
+        done  `shouldBe` [OpMod (Plus 2)]
         available `shouldBe` [Append 4]
+
+      it "applies transformations after op" $ do
+        let (value, _, _, _) = apply (Append 3) (Just 321, [], [], wormhole 3 0)
+        value `shouldBe` Just 216
+
 
     it "implements wormhole transformations" $ do
       -- wormhole moves a char over anoher at a given index using addition
