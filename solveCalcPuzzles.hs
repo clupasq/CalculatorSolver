@@ -136,11 +136,20 @@ solveGames = do
   -- print $ fmap reverse $ solve 33 5 (Just 5, [], [Times 7, Plus 8, Plus (-9), Times 2, Inv10])
   -- print $ fmap reverse $ solve 48 6 (Just 51, [], [Plus 6, Times 3, Inv10, Reverse, Replace "4" "6"])
   -- print $ fmap reverse $ solve 1 6 (Just 0, [], [Plus 5, Times 3, DivBy 6, Inv10, Reverse])
-  print $ fmap reverse $ solve 777 5 (Just 369, [], [Inv10, Replace "93" "63",
-                                                            Replace "63" "33",
-                                                            Replace "36" "93",
-                                                            Replace "39" "33"
-                                                    ], noTransformer)
+  --
+  -- print $ fmap reverse $ solve 777 5 (Just 369, [], [Inv10, Replace "93" "63",
+  --                                                           Replace "63" "33",
+  --                                                           Replace "36" "93",
+  --                                                           Replace "39" "33"
+  --                                                   ], noTransformer)
+
+  -- print $ fmap reverse $ solve 123 5
+  --   (Just 321, [], [DivBy 2, Append 0, Append 1, Append 3], wormhole 3 0)
+
+  print $ fmap reverse $ solve 150 5
+    (Just 525, [], [Plus 1, Append 6, Append 7, DivBy 2], wormhole 3 0)
+
+
 
 tests = hspec $ do
   describe "Calculator solver" $ do
