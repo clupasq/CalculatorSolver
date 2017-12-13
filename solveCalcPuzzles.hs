@@ -1,8 +1,7 @@
+import Test.Hspec
 import Data.Char
 import Data.List
 import Data.Maybe
-import Test.HUnit
-import Debug.Trace
 
 data Operation = Noop
                | Plus Int
@@ -95,11 +94,6 @@ replace a b l@(x:xs) | a `isPrefixOf` l = b ++ (replace a b $ drop (length a) l)
                      | otherwise        = x : replace a b xs
 
 
-shouldBe :: (Eq a, Show a) => a -> a -> IO()
-x `shouldBe` y | x == y    = putStrLn "OK."
-               | otherwise = error ("\r\nExpected: " ++ (show y) ++
-                                    "\r\nBut got : " ++ (show x))
-
 wormhole :: Int -> Int -> Int -> Int
 wormhole from to x | from < l  = base + add
                    | otherwise = x
@@ -142,32 +136,59 @@ solveGames = do
                                                             Replace "39" "33"
                                                     ])
 
-tests = do
-  applyOp (Plus 10) 5 `shouldBe` (Just 15)
-  shiftLeft 1234 `shouldBe` 2341
-  shiftLeft (-1234) `shouldBe` (-2341)
-  shiftRight 1234 `shouldBe` 4123
-  shiftRight (-1234) `shouldBe` (-4123)
-  sumDigits 456 `shouldBe` 15
-  sumDigits (-456) `shouldBe` (-15)
-  mirror 10 `shouldBe` 1001
-  mirror (-10) `shouldBe` (-1001)
-  inv10 (-10) `shouldBe` (-90)
-  revDigits 1234 `shouldBe` 4321
-  revDigits (-1234) `shouldBe` (-4321)
-  append 13 100 `shouldBe` 10013
-  replace "test" "xyz" "this test is a test" `shouldBe` "this xyz is a xyz"
-  opMod (Plus 2) (Append 2) `shouldBe` (Append 4)
-  opMod (Plus 2) (Plus 5) `shouldBe` (Plus 7)
+tests = hspec $ do
+  describe "Calculator solver" $ do
 
-  -- wormhole moves a char over anoher at a given index using addition
-  wormhole 3 0 3213 `shouldBe` 216
-  wormhole 3 1 3213 `shouldBe` 243
-  -- wormhole does nothing if number not long enough
-  wormhole 3 0 123 `shouldBe` 123
+    it "can apply operations" $ do
+      applyOp (Plus 10) 5 `shouldBe` (Just 15)
 
-  apply (OpMod (Plus 2)) (Just 1, [], [Append 2]) `shouldBe`
-           (Just 1, [OpMod (Plus 2)], [Append 4])
+    describe "operations" $ do
+
+      it "can shift numbers" $ do
+        shiftLeft 1234 `shouldBe` 2341
+        shiftLeft (-1234) `shouldBe` (-2341)
+        shiftRight 1234 `shouldBe` 4123
+        shiftRight (-1234) `shouldBe` (-4123)
+
+      it "can sum digits" $ do
+        sumDigits 456 `shouldBe` 15
+        sumDigits (-456) `shouldBe` (-15)
+
+      it "can mirror digits" $ do
+        mirror 10 `shouldBe` 1001
+        mirror (-10) `shouldBe` (-1001)
+
+      it "can do inv10" $ do
+        inv10 (-10) `shouldBe` (-90)
+
+      it "can reverse digits" $ do
+        revDigits 1234 `shouldBe` 4321
+        revDigits (-1234) `shouldBe` (-4321)
+
+      it "can append digits" $ do
+        append 13 100 `shouldBe` 10013
+
+      it "can replace" $
+        replace "test" "xyz" "this test is a test" `shouldBe` "this xyz is a xyz"
+
+      it "can do opmods" $
+        opMod (Plus 2) (Append 2) `shouldBe` (Append 4)
+        opMod (Plus 2) (Plus 5) `shouldBe` (Plus 7)
+
+      it "can apply opmods on existing ops" $
+        let (value, done, available) = apply (OpMod (Plus 2)) (Just 1, [], [Append 2])
+        value     `shouldBe` Just 1
+        done      `shouldBe` [OpMod (Plus 2)]
+        available `shouldBe` [Append 4]
+
+    it "implements wormhole transformations" $ do
+      -- wormhole moves a char over anoher at a given index using addition
+      wormhole 3 0 3213 `shouldBe` 216
+      wormhole 3 1 3213 `shouldBe` 243
+      -- wormhole does nothing if number not long enough
+      wormhole 3 0 123 `shouldBe` 123
+
+
 
 
 main = do
