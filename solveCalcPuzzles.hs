@@ -17,6 +17,7 @@ data Operation = Plus Int
                | Replace String String
                | OpMod Operation
                | Store
+               | StoreInactive
                | Retrieve Int
   deriving (Eq, Show)
 
@@ -82,6 +83,19 @@ rotRight n = read $ last s : init s
 replace f t = read . repl . show
   where repl s = subRegex (mkRegex f) s t
 
+modOp :: Operation -> Operation -> Operation
+modOp operation operand =
+  case operand of
+       Plus   x -> Plus   (op x)
+       Minus  x -> Minus  (op x)
+       Times  x -> Times  (op x)
+       DivBy  x -> DivBy  (op x)
+       Append x -> Append (op x)
+       o        -> o
+  where op = case operation of
+                  Plus y  -> (+y)
+                  Minus y -> ((-)y)
+
 apply :: Operation -> GameState -> GameState
 apply op g =
   case op of
@@ -100,6 +114,7 @@ apply op g =
        RotateLeft  -> g' { value = applyPosNegOp rotLeft v }
        RotateRight -> g' { value = applyPosNegOp rotRight v }
        Replace f t -> g' { value = replace f t v }
+       OpMod op    -> g' { ops   = map (modOp op) (ops g) }
 
   where v = value g
         g' = g { movesLeft = movesLeft g - 1 }
@@ -193,6 +208,15 @@ tests = hspec $ do
       it "leaves untouched if not found" $ do
         let game = sampleGame { value = 1234 }
         value (apply (Replace "13" "99") game) `shouldBe` 1234
+
+    describe "Operation Modifier" $ do
+      it "modifies Operations that have an Int param" $ do
+        let game = sampleGame { ops = [Plus 5, Minus 3, Append 5, Mirror] }
+        ops (apply (OpMod $ Plus 3) game) `shouldBe`
+                                      [Plus 8, Minus 6, Append 8, Mirror]
+        ops (apply (OpMod $ Minus 2) game) `shouldBe`
+                                      [Plus 3, Minus 1, Append 3, Mirror]
+
 
 
 
