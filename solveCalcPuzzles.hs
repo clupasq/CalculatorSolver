@@ -101,14 +101,16 @@ noTransformer :: Int -> Int
 noTransformer = id
 
 wormhole :: Int -> Int -> Int -> Int
-wormhole from to x | from < l  = base + add
+wormhole from to x | from < l  = wormhole from to $ base + add
                    | otherwise = x
   where s = show x
         l = length s
         revstr = reverse s
-        (a, b) = splitAt from revstr
-        base   = read $ reverse a
-        add    = (read b) * 10^to
+        prefix = take from revstr
+        suffix = drop (from+1) revstr
+        digit  = [revstr !! from]
+        base   = read $ reverse (prefix++suffix)
+        add    = (read digit) * 10^to
 
 
 
@@ -146,9 +148,11 @@ solveGames = do
   -- print $ fmap reverse $ solve 123 5
   --   (Just 321, [], [DivBy 2, Append 0, Append 1, Append 3], wormhole 3 0)
 
+  -- print $ fmap reverse $ solve 150 5
+  --   (Just 525, [], [Plus 1, Append 6, Append 7, DivBy 2], wormhole 3 0)
+
   print $ fmap reverse $ solve 150 5
     (Just 525, [], [Plus 1, Append 6, Append 7, DivBy 2], wormhole 3 0)
-
 
 
 tests = hspec $ do
@@ -201,12 +205,28 @@ tests = hspec $ do
         value `shouldBe` Just 216
 
 
-    it "implements wormhole transformations" $ do
-      -- wormhole moves a char over anoher at a given index using addition
-      wormhole 3 0 3213 `shouldBe` 216
-      wormhole 3 1 3213 `shouldBe` 243
-      -- wormhole does nothing if number not long enough
-      wormhole 3 0 123 `shouldBe` 123
+    describe "wormhole" $ do
+
+      it "moves a char over anoher at a given index using addition" $ do
+        wormhole 3 0 3213 `shouldBe` 216
+        wormhole 3 1 3213 `shouldBe` 243
+
+      it "does nothing if number not long enough" $ do
+        wormhole 3 0 123 `shouldBe` 123
+
+      it "applies repeatedly until to transformation can be done" $ do
+        {-
+        -   v ^
+        - 12345  -> 1248
+        -
+        -   v ^
+        -  1248  -> 150
+        -
+        -   v ^
+        -   150  -> 51
+        -
+         - -}
+        wormhole 2 0 12345 `shouldBe` 51
 
 
 
