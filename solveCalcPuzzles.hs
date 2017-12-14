@@ -35,14 +35,15 @@ data GameState = GameState {
   deriving (Eq, Show)
 
 
-mkGame :: Int -> Int -> [Operation] -> GameState
-mkGame target value ops = GameState { target      = target,
-                                      value       = value,
-                                      ops         = ops,
-                                      movesLeft   = 5,
-                                      transformer = None,
-                                      steps       = []
-                                    }
+mkGame :: Int -> Int -> Int -> [Operation] -> GameState
+mkGame target value movesLeft ops =
+  GameState { target      = target,
+              value       = value,
+              ops         = ops,
+              movesLeft   = movesLeft,
+              transformer = None,
+              steps       = []
+            }
 
 append :: Int -> Int -> Int
 append suffix value = read $ (show value) ++ (show suffix)
@@ -106,7 +107,7 @@ apply op g =
 
 
 
-sampleGame = mkGame 0 0 []
+sampleGame = mkGame 0 0 5 []
 
 tests = hspec $ do
 
