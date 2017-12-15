@@ -1,6 +1,7 @@
 import Test.Hspec
 
 import Text.Regex (mkRegex, subRegex)
+import Data.Maybe (isJust)
 
 data Operation = Plus Int
                | Minus Int
@@ -25,26 +26,14 @@ data Transformer = Wormhole Int Int | None
   deriving (Eq, Show)
 
 data GameState = GameState {
-                   target       :: Int,
                    value        :: Int,
                    movesLeft    :: Int,
-                   steps        :: [Operation],
                    ops          :: [Operation],
                    transformer  :: Transformer
                  }
                | InvalidGameState
   deriving (Eq, Show)
 
-
-mkGame :: Int -> Int -> Int -> [Operation] -> GameState
-mkGame target value movesLeft ops =
-  GameState { target      = target,
-              value       = value,
-              ops         = ops,
-              movesLeft   = movesLeft,
-              transformer = None,
-              steps       = []
-            }
 
 append :: Int -> Int -> Int
 append suffix value = read $ (show value) ++ (show suffix)
@@ -160,9 +149,27 @@ apply op g =
         g' = g { movesLeft = movesLeft g - 1 }
 
 
+possibleOps :: GameState -> [Operation]
+possibleOps g = filter (/= StoreInactive) (ops g)
+
+findValid :: [Maybe a] -> Maybe a
+findValid (x:xs) | isJust x  = x
+                 | otherwise = findValid xs
+findValid     [] = Nothing
+
+solve :: Int -> GameState -> [Operation] -> Maybe [Operation]
+solve target g formerSteps
+  | target == value g = Just $ reverse formerSteps
+  | movesLeft g == 0  = Nothing
+  | otherwise         = findValid solutions
+  where solutions = [ solve target (apply op g) (op:formerSteps) | op <- possibleOps g ]
 
 
-sampleGame = mkGame 0 0 5 []
+
+sampleGame = GameState { value = 0,
+                         movesLeft = 5,
+                         ops = [],
+                         transformer = None }
 
 tests = hspec $ do
 
@@ -338,8 +345,26 @@ tests = hspec $ do
           - -}
           wormhole 2 0 12345 `shouldBe` 51
 
+    describe "Solving" $ do
+
+      it "detects if no solutions available" $ do
+        let game = sampleGame { value = 0,
+                                movesLeft = 3,
+                                ops = [Plus 1] }
+        solve 99 game [] `shouldBe` Nothing
 
 
+      it "can find simple solutions" $ do
+        let game = sampleGame { value = 0,
+                                movesLeft = 3,
+                                ops = [Plus 1] }
+        solve 3 game [] `shouldBe` Just [ Plus 1, Plus 1, Plus 1]
+
+      it "can find more complex solutions" $ do
+        let game = sampleGame { value = 5,
+                                movesLeft = 5,
+                                ops = [Times 7, Plus 8, Minus 9, Times 2, Inv10] }
+        solve 33 game [] `shouldBe` Just [Times 7,Plus 8,Plus 8,Minus 9,Minus 9]
 
 
 main = do
