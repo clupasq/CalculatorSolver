@@ -94,7 +94,7 @@ modOp operation operand =
        o        -> o
   where op = case operation of
                   Plus y  -> (+y)
-                  Minus y -> ((-)y)
+                  Minus y -> (+negate y)
 
 apply :: Operation -> GameState -> GameState
 apply op g =
@@ -216,20 +216,6 @@ tests = hspec $ do
                                       [Plus 8, Minus 6, Append 8, Mirror]
         ops (apply (OpMod $ Minus 2) game) `shouldBe`
                                       [Plus 3, Minus 1, Append 3, Mirror]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
