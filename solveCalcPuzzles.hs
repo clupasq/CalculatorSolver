@@ -367,5 +367,39 @@ tests = hspec $ do
         solve 33 game [] `shouldBe` Just [Times 7,Plus 8,Plus 8,Minus 9,Minus 9]
 
 
+
+solveLevels = do
+
+  let level188 = GameState {
+        movesLeft = 5,
+        value = 25,
+        ops = [Mirror, Store, BackSpace, Append 5],
+        transformer = Wormhole 3 1
+      }
+  print $ solve 822 level188 []
+
+  let level189 = GameState {
+        movesLeft = 4,
+        value = 45,
+        ops = [Plus 10, Mirror, Reverse],
+        transformer = Wormhole 3 1
+      }
+  print $ solve 516 level189 []
+
+  let level190 = GameState {
+        movesLeft = 4,
+        value = 238,
+        ops = [Minus 5, Inv10, RotateRight, Replace "28" "21"],
+        transformer = None
+      }
+  print $ solve 212 level190 []
+
+
+
+
+
+
+
 main = do
   tests
+  solveLevels
