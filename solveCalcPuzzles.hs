@@ -277,6 +277,12 @@ tests = hspec $ do
                                       [Plus 3, Minus 1, Append 3, Mirror]
         movesLeft (apply (OpMod $ Minus 2) game) `shouldBe` 4
 
+      it "Leaves other operations unchanged" $ do
+        let initialOps = [ Inv10, Reverse, Mirror, OpMod (Plus 3)]
+        let game = sampleGame { ops = initialOps }
+        ops (apply (OpMod $ Plus 3) game) `shouldBe` initialOps
+
+
     describe "Store/Retrieve operations" $ do
 
       describe "Storing values" $ do
@@ -327,6 +333,7 @@ tests = hspec $ do
         it "moves a char over anoher at a given index using addition" $ do
           wormhole 3 0 3213 `shouldBe` 216
           wormhole 3 1 3213 `shouldBe` 243
+          wormhole 4 0 30027 `shouldBe` 30
 
         it "does nothing if number not long enough" $ do
           wormhole 3 0 123 `shouldBe` 123
@@ -394,11 +401,74 @@ solveLevels = do
       }
   print $ solve 212 level190 []
 
+  let level192 = GameState {
+        movesLeft = 6,
+        value = 189,
+        ops = [Plus 8, Times 4, Append 9, Inv10, Replace "7" "0"],
+        transformer = Wormhole 3 0
+      }
+  print $ solve 500 level192 []
 
+  let level193 = GameState {
+        movesLeft = 4,
+        value = 234,
+        ops = [Append 9, Plus 9, Replace "53" "32"],
+        transformer = Wormhole 3 0
+      }
+  print $ solve 321 level193 []
 
+  -- let level194 = GameState {
+  --       movesLeft = 4,
+  --       value = 333,
+  --       ops = [Append 1, Append 3, DivBy 2, OpMod (Plus 1)],
+  --       transformer = Wormhole 3 0
+  --     }
+  -- print $ solve 123 level194 []
 
+  let level195 = GameState {
+        movesLeft = 5,
+        value = 613,
+        ops = [Append 5, Times 2, Plus 3, Reverse, Inv10],
+        transformer = Wormhole 3 0
+      }
+  print $ solve 777 level195 []
 
+  let level196 = GameState {
+        movesLeft = 7,
+        value = 60,
+        ops = [Plus 5, Times 5, Append 2, Inv10],
+        transformer = Wormhole 3 1
+      }
+  print $ solve 550 level196 []
 
+  let level197 = GameState {
+        movesLeft = 5,
+        value = 1234,
+        ops = [Replace "24" "13",
+               Replace "12" "32",
+               Replace "23" "32",
+               Replace "13" "21",
+               Replace "23" "43" ],
+        transformer = None
+      }
+  print $ solve 4321 level197 []
+
+  let level198 = GameState {
+        movesLeft = 7,
+        value = 4,
+        ops = [Plus 6, Append 4, Times 3, Inv10],
+        transformer = Wormhole 3 1
+      }
+  print $ solve 750 level198 []
+
+  -- no solution ?!
+  let level199 = GameState {
+        movesLeft = 6,
+        value = 3002,
+        ops = [Append 7, Replace "3" "5", Inv10, RotateRight],
+        transformer = Wormhole 4 0
+      }
+  print $ solve 3507 level199 []
 
 main = do
   tests
